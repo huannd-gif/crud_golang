@@ -13,29 +13,31 @@ type TypeResult string
 var allResult = [6]string{"INIT", "QUEUEING", "SUCCESS", "FAIL", "NOT_ANSWERED", "CANT_CONNECT"}
 
 type ParamCallRequest struct {
-	PageNum  int `form:"page_num"`
-	PageSize int `form:"page_size"`
+	PhoneNumber          string `form:"phone_number"`
+	MetadataDisplayField string `form:"metadata_display_field"`
+	PageNum              *int   `form:"page_num"`
+	PageSize             *int   `form:"page_size"`
 }
 
 type AddCallRequest struct {
-	PhoneNumber string     `json:"phone_number"`
-	Result      TypeResult `json:"result"`
-	CallAt      *time.Time `json:"call_at"`
-	EndAt       *time.Time `json:"end_at"`
-	CallPress   *time.Time `json:"call_press"`
-	ReceiverAt  *time.Time `json:"receiver_at"`
-	Metadata    string     `json:"metadata"`
+	PhoneNumber string                 `json:"phone_number"`
+	Result      TypeResult             `json:"result"`
+	CallAt      *time.Time             `json:"call_at"`
+	EndAt       *time.Time             `json:"end_at"`
+	CallPress   *time.Time             `json:"call_press"`
+	ReceiverAt  *time.Time             `json:"receiver_at"`
+	Metadata    map[string]interface{} `json:"metadata"`
 }
 
 type UpdateCallRequest struct {
-	PhoneNumber string     `json:"phone_number"`
-	Result      TypeResult `json:"result"`
-	UpdateAt    *time.Time `json:"update_at"`
-	CallAt      *time.Time `json:"call_at"`
-	EndAt       *time.Time `json:"end_at"`
-	CallPress   *time.Time `json:"call_press"`
-	ReceiverAt  *time.Time `json:"receiver_at"`
-	Metadata    string     `json:"metadata"`
+	PhoneNumber string                 `json:"phone_number"`
+	Result      TypeResult             `json:"result"`
+	UpdateAt    *time.Time             `json:"update_at"`
+	CallAt      *time.Time             `json:"call_at"`
+	EndAt       *time.Time             `json:"end_at"`
+	CallPress   *time.Time             `json:"call_press"`
+	ReceiverAt  *time.Time             `json:"receiver_at"`
+	Metadata    map[string]interface{} `json:"metadata"`
 }
 
 func parseStrToTypeResult(s string) (TypeResult, error) {
@@ -64,9 +66,17 @@ func (typeResult TypeResult) String() string {
 }
 
 func (p *ParamCallRequest) extractToQuery() query.CallRequest {
+	if p.PageNum == nil {
+		*p.PageNum = 1
+	}
+	if p.PageSize == nil {
+		*p.PageSize = 15
+	}
 	return query.CallRequest{
-		PageNum:  p.PageNum,
-		PageSize: p.PageSize,
+		PhoneNumber:          p.PhoneNumber,
+		MetadataDisplayField: p.MetadataDisplayField,
+		PageNum:              *p.PageNum,
+		PageSize:             *p.PageSize,
 	}
 }
 

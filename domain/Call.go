@@ -14,7 +14,7 @@ type Call struct {
 	EndAt       *time.Time
 	CallPress   *time.Time
 	ReceiverAt  *time.Time
-	Metadata    string
+	Metadata    map[string]interface{}
 }
 
 func NewCallAllArgument(
@@ -27,7 +27,7 @@ func NewCallAllArgument(
 	EndAt *time.Time,
 	CallPress *time.Time,
 	ReceiverAt *time.Time,
-	Metadata string,
+	Metadata map[string]interface{},
 ) *Call {
 	return &Call{
 		Id:          Id,
@@ -83,7 +83,7 @@ func (c *Call) GetReceiverAt() *time.Time {
 	return c.ReceiverAt
 }
 
-func (c *Call) GetMetadata() string {
+func (c *Call) GetMetadata() map[string]interface{} {
 	return c.Metadata
 }
 
@@ -124,6 +124,6 @@ func (c *Call) SetReceiverAt(receiverAt *time.Time) {
 	c.ReceiverAt = receiverAt
 }
 
-func (c *Call) SetMetadata(metadata string) {
+func (c *Call) SetMetadata(metadata map[string]interface{}) {
 	c.Metadata = metadata
 }

@@ -12,6 +12,7 @@ type Call struct {
 	EndAt       *time.Time
 	CallPress   *time.Time
 	ReceiverAt  *time.Time
+	Metadata    string
 }
 
 type Paging struct {

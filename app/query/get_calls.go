@@ -10,12 +10,14 @@ import (
 type GetCallsHandler decorator.QueryHandler[CallRequest, ListCallsPaginated]
 
 type CallRequest struct {
-	PageNum  int
-	PageSize int
+	PhoneNumber          string
+	MetadataDisplayField string
+	PageNum              int
+	PageSize             int
 }
 
 type GetCallsReadModel interface {
-	GetCalls(ctx context.Context, pageNum, pageSize int) (ListCallsPaginated, error)
+	GetCalls(ctx context.Context, callRequest CallRequest) (ListCallsPaginated, error)
 }
 
 type getCallsHandler struct {
@@ -23,7 +25,7 @@ type getCallsHandler struct {
 }
 
 func (g getCallsHandler) Handle(ctx context.Context, re CallRequest) (ListCallsPaginated, error) {
-	calls, err := g.callRepo.GetCalls(ctx, re.PageNum, re.PageSize)
+	calls, err := g.callRepo.GetCalls(ctx, re)
 
 	if err != nil {
 		return ListCallsPaginated{}, errors.New(err.Error())

@@ -4,6 +4,7 @@ import (
 	"api_crud/app/query"
 	"api_crud/domain"
 	"context"
+	"encoding/json"
 	"errors"
 	"gorm.io/gorm"
 	"time"
@@ -11,15 +12,15 @@ import (
 
 type Call struct {
 	Id          int        `gorm:"primaryKey,autoincrement;index;not null"`
-	PhoneNumber string     `gorm:"varchar(20);not null"`
-	Result      string     `gorm:"varchar(20);not null"`
+	PhoneNumber string     `gorm:"type:varchar(20);not null"`
+	Result      string     `gorm:"type:varchar(20);not null"`
 	CreateAt    *time.Time `gorm:"autoCreateTime;milli;not null"`
 	UpdateAt    *time.Time `gorm:"autoUpdateTime;milli"`
 	CallAt      *time.Time `gorm:"autoCreateTime;milli;not null"`
 	EndAt       *time.Time `gorm:"milli"`
 	CallPress   *time.Time `gorm:"milli"`
 	ReceiverAt  *time.Time `gorm:"milli"`
-	Metadata    string     `gorm:"type:longtext;not null"`
+	Metadata    string     `gorm:"type:json;null"`
 }
 
 type CallMySQLRepository struct {
@@ -37,10 +38,16 @@ func (cdb CallMySQLRepository) callModelToQuery(c *Call) *query.Call {
 		EndAt:       c.EndAt,
 		CallPress:   c.CallPress,
 		ReceiverAt:  c.ReceiverAt,
+		Metadata:    c.Metadata,
 	}
 }
 
 func (cdb CallMySQLRepository) callDomainToModel(c *domain.Call) *Call {
+	metadata, err := json.Marshal(c.GetMetadata())
+	if err != nil {
+		metadata = nil
+	}
+
 	return &Call{
 		PhoneNumber: c.GetPhoneNumber(),
 		Result:      c.GetResult(),
@@ -48,22 +55,32 @@ func (cdb CallMySQLRepository) callDomainToModel(c *domain.Call) *Call {
 		EndAt:       c.GetEndAt(),
 		CallPress:   c.GetCallPress(),
 		ReceiverAt:  c.GetReceiverAt(),
-		Metadata:    c.GetMetadata(),
+		Metadata:    string(metadata),
 	}
 }
 
-func (cdb CallMySQLRepository) GetCalls(ctx context.Context, pageNum, pageSize int) (query.ListCallsPaginated, error) {
+func (cdb CallMySQLRepository) GetCalls(ctx context.Context, re query.CallRequest) (query.ListCallsPaginated, error) {
 	callModels := make([]*Call, 0, 10)
 
 	baseQuery := cdb.db.Model(Call{}).Session(&gorm.Session{})
+	if re.PhoneNumber != "" {
+		baseQuery = baseQuery.Where("phone_number LIKE ?", "%"+re.PhoneNumber+"%")
+	}
+
+	if re.MetadataDisplayField != "" {
+		baseQuery = baseQuery.Select("id, phone_number, result, create_at, update_at, call_at, end_at, call_press, receiver_at, CONCAT('{" + re.MetadataDisplayField + ": ', JSON_UNQUOTE(JSON_EXTRACT(metadata, '$." + re.MetadataDisplayField + "')), '}') AS metadata")
+
+		//baseQuery = baseQuery.Select("id, phone_number, result, create_at, update_at, call_at, end_at, call_press, receiver_at,JSON_EXTRACT(metadata, '$." + re.MetadataDisplayField + "') AS metadata")
+	}
+
 	total := int64(0)
 	err := baseQuery.Count(&total).Error
 	if err != nil {
 		return query.ListCallsPaginated{}, errors.New(err.Error())
 	}
-	paging := calculatePaging(pageNum, pageSize, int(total))
+	paging := calculatePaging(re.PageNum, re.PageSize, int(total))
 
-	err = baseQuery.Order("create_at desc").Offset((pageNum - 1) * pageSize).Limit(pageSize).Find(&callModels).Error
+	err = baseQuery.Order("create_at desc").Offset((re.PageNum - 1) * re.PageSize).Limit(re.PageSize).Find(&callModels).Error
 
 	if err != nil {
 		return query.ListCallsPaginated{}, errors.New(err.Error())
