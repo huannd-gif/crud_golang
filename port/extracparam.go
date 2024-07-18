@@ -67,10 +67,13 @@ func (typeResult TypeResult) String() string {
 
 func (p *ParamCallRequest) extractToQuery() query.CallRequest {
 	if p.PageNum == nil {
-		*p.PageNum = 1
+		defaultPageNum := 1
+		p.PageNum = &defaultPageNum
 	}
 	if p.PageSize == nil {
-		*p.PageSize = 15
+		defaultPageSize := 1
+		p.PageSize = &defaultPageSize
+		//*p.PageSize = 15
 	}
 	return query.CallRequest{
 		PhoneNumber:          p.PhoneNumber,
